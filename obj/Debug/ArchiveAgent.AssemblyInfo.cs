@@ -12,11 +12,11 @@ using System.Reflection;
 
 [assembly: System.Reflection.AssemblyCompanyAttribute("ArchiveAgent")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
-[assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+44259ae9fe38cfde91c9b15ad181fba3c2c3c26f")]
-[assembly: System.Reflection.AssemblyProductAttribute("ArchiveAgent")]
+[assembly: System.Reflection.AssemblyFileVersionAttribute("0.50.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("0.50.0+df75e95d0c9481dca79e9484453186816af0605b")]
+[assembly: System.Reflection.AssemblyProductAttribute("Archive-Agent")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ArchiveAgent")]
-[assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
+[assembly: System.Reflection.AssemblyVersionAttribute("0.50.0.0")]
 [assembly: System.Runtime.Versioning.TargetPlatformAttribute("Windows7.0")]
 [assembly: System.Runtime.Versioning.SupportedOSPlatformAttribute("Windows7.0")]
 

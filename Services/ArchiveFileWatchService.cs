@@ -56,7 +56,9 @@ public sealed class ArchiveFileWatchService : IDisposable
     {
         try
         {
-            Config = _orchestrator.LoadMergedConfigAsync("watch_service").GetAwaiter().GetResult();
+            Config = Task.Run(() => _orchestrator.LoadMergedConfigAsync("watch_service"))
+                .GetAwaiter()
+                .GetResult();
             UpdateDebounceDelay();
             StatusChanged?.Invoke(this, "Configuration loaded.");
         }
@@ -81,8 +83,8 @@ public sealed class ArchiveFileWatchService : IDisposable
             hostConfig.DebounceDelay = Math.Max(100, Config.DebounceDelay);
             _orchestrator.SaveHostConfig();
 
-            var backendConfig = _orchestrator
-                .SaveBackendConfigAsync(ArchiveOrchestrator.CreateBackendPatch(Config), "watch_service")
+            var backendPatch = ArchiveOrchestrator.CreateBackendPatch(Config);
+            var backendConfig = Task.Run(() => _orchestrator.SaveBackendConfigAsync(backendPatch, "watch_service"))
                 .GetAwaiter()
                 .GetResult();
             Config = ArchiveOrchestrator.MergeConfig(hostConfig, backendConfig);

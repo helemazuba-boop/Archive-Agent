@@ -20,17 +20,16 @@ public sealed class ArchivePluginLifecycle
         _paths = paths;
     }
 
-    public Task StartAsync(CancellationToken cancellationToken = default)
+    public async Task StartAsync(CancellationToken cancellationToken = default)
     {
         if (Interlocked.Exchange(ref _started, 1) == 1)
         {
-            return Task.CompletedTask;
+            return;
         }
 
         ArchivePythonProcessTracker.CleanupPersistedProcess(_paths.ProcessSnapshotPath);
         _orchestrator.StartRuntime();
-        _watchService.Initialize();
-        return Task.CompletedTask;
+        await Task.Run(_watchService.Initialize, cancellationToken);
     }
 
     public async Task StopAsync(CancellationToken cancellationToken = default)

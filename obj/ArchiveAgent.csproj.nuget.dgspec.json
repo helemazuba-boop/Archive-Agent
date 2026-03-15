@@ -5,7 +5,7 @@
   },
   "projects": {
     "D:\\projects\\Archive-Agent\\ArchiveAgent.csproj": {
-      "version": "1.0.0",
+      "version": "0.50.0",
       "restore": {
         "projectUniqueName": "D:\\projects\\Archive-Agent\\ArchiveAgent.csproj",
         "projectName": "ArchiveAgent",
@@ -51,6 +51,7 @@
           "targetAlias": "net8.0-windows",
           "dependencies": {
             "ClassIsland.PluginSdk": {
+              "include": "Compile, Build, ContentFiles, Analyzers, BuildTransitive",
               "target": "Package",
               "version": "[2.0.0.2, )"
             }

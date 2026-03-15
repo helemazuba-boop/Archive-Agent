@@ -38,9 +38,16 @@ public class Plugin : PluginBase
         services.AddTrigger<ArchiveOperationFailedTrigger>();
         services.AddAction<RunArchiveOperationAction>();
 
-        AppBase.Current.AppStarted += (_, _) =>
+        AppBase.Current.AppStarted += async (_, _) =>
         {
-            _ = IAppHost.GetService<ArchivePluginLifecycle>().StartAsync();
+            try
+            {
+                await IAppHost.GetService<ArchivePluginLifecycle>().StartAsync();
+            }
+            catch (Exception ex)
+            {
+                ArchiveDiagnosticsLogger.Error("Plugin", "Archive plugin startup failed.", ex);
+            }
         };
 
         AppBase.Current.AppStopping += (_, _) =>
