@@ -1,0 +1,365 @@
+<ci:SettingsPageBase x:Class="ArchiveAgent.Views.SettingPages.ArchiveMainSettingsPage"
+                     xmlns="https://github.com/avaloniaui"
+                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                     xmlns:ci="http://classisland.tech/schemas/xaml/core"
+                     xmlns:ui="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
+                     xmlns:local="clr-namespace:ArchiveAgent.Views.SettingPages"
+                     x:DataType="local:ArchiveMainSettingsPage"
+                     d:DataContext="{d:DesignInstance local:ArchiveMainSettingsPage}"
+                     mc:Ignorable="d">
+
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Classes="settings-container animated-intro">
+
+            <!-- 状态信息栏 -->
+            <ui:InfoBar x:Name="StatusInfoBar"
+                        Margin="0,0,0,12"
+                        IsOpen="True"
+                        IsClosable="False"
+                        Severity="Informational"
+                        Title="就绪"
+                        Message="监控状态：待命｜监控路径：桌面">
+                <ui:InfoBar.ActionButton>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button x:Name="ToggleWatchBtn"
+                                Click="OnToggleWatchClick"
+                                VerticalAlignment="Center">
+                            <ci:IconText Glyph="&#xE71A;" Text="启用监控" />
+                        </Button>
+                        <Button x:Name="RefreshDataBtn"
+                                Click="OnRefreshDataClick"
+                                VerticalAlignment="Center">
+                            <ci:IconText Glyph="&#xE0B5;" Text="刷新" />
+                        </Button>
+                    </StackPanel>
+                </ui:InfoBar.ActionButton>
+            </ui:InfoBar>
+
+            <ci:IconText Glyph="&#xE8E5;" Text="监控与整理" Margin="0,0,0,4" />
+
+            <!-- 监控配置 -->
+            <ui:SettingsExpander Header="监控配置"
+                                 Description="配置文件监控路径和自动整理行为。"
+                                 IsExpanded="True">
+                <ui:SettingsExpander.IconSource>
+                    <ui:FontIconSource Glyph="&#xE71A;" FontFamily="Segoe MDL2 Assets" />
+                </ui:SettingsExpander.IconSource>
+                <ui:SettingsExpanderItem Content="监控路径"
+                                         Description="监控此目录下的文件变化（默认桌面）。">
+                    <ui:SettingsExpanderItem.Footer>
+                        <TextBox x:Name="WatchPathBox"
+                                 Width="320"
+                                 LostFocus="OnConfigInputLostFocus"
+                                 Watermark="留空使用桌面路径" />
+                    </ui:SettingsExpanderItem.Footer>
+                </ui:SettingsExpanderItem>
+                <ui:SettingsExpanderItem Content="启用实时监控"
+                                         Description="检测到文件变化立即触发整理。">
+                    <ui:SettingsExpanderItem.Footer>
+                        <ToggleSwitch x:Name="EnableWatchToggle"
+                                      IsChecked="True"
+                                      IsCheckedChanged="OnConfigToggleChanged" />
+                    </ui:SettingsExpanderItem.Footer>
+                </ui:SettingsExpanderItem>
+                <ui:SettingsExpanderItem Content="显示通知"
+                                         Description="文件整理完成后显示系统通知。">
+                    <ui:SettingsExpanderItem.Footer>
+                        <ToggleSwitch x:Name="ShowNotificationToggle"
+                                      IsChecked="True"
+                                      IsCheckedChanged="OnConfigToggleChanged" />
+                    </ui:SettingsExpanderItem.Footer>
+                </ui:SettingsExpanderItem>
+                <ui:SettingsExpanderItem Content="覆盖现有文件"
+                                         Description="允许覆盖目标位置已存在的文件。">
+                    <ui:SettingsExpanderItem.Footer>
+                        <ToggleSwitch x:Name="OverwriteToggle"
+                                      IsChecked="False"
+                                      IsCheckedChanged="OnConfigToggleChanged" />
+                    </ui:SettingsExpanderItem.Footer>
+                </ui:SettingsExpanderItem>
+                <ui:SettingsExpanderItem Content="操作后打开文件管理器"
+                                         Description="整理完成后自动打开目标位置并高亮显示文件。">
+                    <ui:SettingsExpanderItem.Footer>
+                        <ToggleSwitch x:Name="OpenExplorerToggle"
+                                      IsChecked="True"
+                                      IsCheckedChanged="OnConfigToggleChanged" />
+                    </ui:SettingsExpanderItem.Footer>
+                </ui:SettingsExpanderItem>
+            </ui:SettingsExpander>
+
+            <!-- 关键字规则 -->
+            <ui:SettingsExpander Header="关键字整理规则"
+                                 Description="根据关键字自动将文件整理到指定目录。"
+                                 IsExpanded="True"
+                                 Margin="0,4,0,0">
+                <ui:SettingsExpander.IconSource>
+                    <ui:FontIconSource Glyph="&#xE945;" FontFamily="Segoe MDL2 Assets" />
+                </ui:SettingsExpander.IconSource>
+                <StackPanel Spacing="8" Margin="12,0,12,12">
+                    <!-- 添加新规则 -->
+                    <Border Background="#05000000"
+                            BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Padding="12">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="添加新规则" FontWeight="SemiBold" Opacity="0.9" />
+                            <Grid ColumnDefinitions="Auto,*,Auto,*,Auto" ColumnSpacing="8">
+                                <TextBlock Grid.Column="0" Text="关键字" VerticalAlignment="Center" Opacity="0.8" />
+                                <TextBox x:Name="NewKeywordBox"
+                                         Grid.Column="1"
+                                         Watermark="如：报告、.pdf" />
+                                <TextBlock Grid.Column="2" Text="目标目录" VerticalAlignment="Center" Margin="8,0,0,0" Opacity="0.8" />
+                                <TextBox x:Name="NewTargetDirBox"
+                                         Grid.Column="3"
+                                         Watermark="如：D:\文档" />
+                                <Button x:Name="AddRuleBtn"
+                                        Grid.Column="4"
+                                        Classes="accent"
+                                        Click="OnAddRuleClick"
+                                        Content="添加" />
+                            </Grid>
+                            <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
+                                <CheckBox x:Name="MatchFileNameCheckBox" Content="匹配文件名" IsChecked="True" />
+                                <CheckBox x:Name="MatchExtensionCheckBox" Content="匹配扩展名" IsChecked="False" Grid.Column="2" />
+                                <TextBlock Grid.Column="3" Text="优先级" VerticalAlignment="Center" Opacity="0.8" Margin="8,0,0,0" />
+                                <NumericUpDown x:Name="NewRulePriorityBox"
+                                               Grid.Column="3"
+                                               Width="80"
+                                               Minimum="0"
+                                               Maximum="100"
+                                               Value="0"
+                                               Margin="48,0,0,0" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- 规则列表 -->
+                    <Border Background="#03000000"
+                            BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8">
+                        <Grid RowDefinitions="Auto,*">
+                            <Border BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="0,0,0,1"
+                                    Padding="10,8">
+                                <Grid ColumnDefinitions="40,*,*,80,60,60" ColumnSpacing="8">
+                                    <TextBlock Grid.Column="0" Text="启" FontWeight="SemiBold" Opacity="0.7" />
+                                    <TextBlock Grid.Column="1" Text="关键字" FontWeight="SemiBold" />
+                                    <TextBlock Grid.Column="2" Text="目标目录" FontWeight="SemiBold" />
+                                    <TextBlock Grid.Column="3" Text="类型" FontWeight="SemiBold" Opacity="0.8" />
+                                    <TextBlock Grid.Column="4" Text="优先级" FontWeight="SemiBold" Opacity="0.8" />
+                                    <TextBlock Grid.Column="5" Text="操作" FontWeight="SemiBold" Opacity="0.8" />
+                                </Grid>
+                            </Border>
+                            <ListBox x:Name="RulesListBox"
+                                     Grid.Row="1"
+                                     MinHeight="120"
+                                     MaxHeight="240">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Padding="10,8" BorderBrush="#10000000" BorderThickness="0,0,0,1">
+                                            <Grid ColumnDefinitions="40,*,*,80,60,60" ColumnSpacing="8">
+                                                <CheckBox Grid.Column="0"
+                                                          IsChecked="{Binding IsEnabled}"
+                                                          IsThreeState="False" />
+                                                <TextBlock Grid.Column="1"
+                                                           Text="{Binding Keyword}"
+                                                           VerticalAlignment="Center"
+                                                           TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Grid.Column="2"
+                                                           Text="{Binding TargetDirectory}"
+                                                           VerticalAlignment="Center"
+                                                           TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Grid.Column="3"
+                                                           VerticalAlignment="Center"
+                                                           Opacity="0.7">
+                                                    <MultiBinding StringFormat="{}{0}{1}">
+                                                        <Binding Path="MatchFileName" Converter="{StaticResource BoolToTextConverter}" ConverterParameter="名" />
+                                                        <Binding Path="MatchExtension" Converter="{StaticResource BoolToTextConverter}" ConverterParameter="扩" />
+                                                    </MultiBinding>
+                                                </TextBlock>
+                                                <TextBlock Grid.Column="4"
+                                                           Text="{Binding Priority}"
+                                                           VerticalAlignment="Center"
+                                                           Opacity="0.7" />
+                                                <Button Grid.Column="5"
+                                                        Content="删除"
+                                                        FontSize="12"
+                                                        Padding="8,4"
+                                                        Click="OnDeleteRuleClick"
+                                                        Tag="{Binding Id}" />
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                            <StackPanel x:Name="RulesEmptyStatePanel"
+                                        Grid.Row="1"
+                                        HorizontalAlignment="Center"
+                                        IsVisible="True"
+                                        Spacing="6"
+                                        VerticalAlignment="Center">
+                                <TextBlock FontFamily="Segoe MDL2 Assets, Segoe Fluent Icons, Segoe UI Symbol"
+                                           Text="&#xE945;"
+                                           FontSize="36"
+                                           Opacity="0.4"
+                                           HorizontalAlignment="Center" />
+                                <TextBlock Text="暂无整理规则"
+                                           Opacity="0.6"
+                                           FontSize="13"
+                                           FontWeight="SemiBold"
+                                           HorizontalAlignment="Center" />
+                                <TextBlock Text="添加关键字规则后，新文件将自动整理到对应目录。"
+                                           Opacity="0.5"
+                                           FontSize="11"
+                                           HorizontalAlignment="Center" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </ui:SettingsExpander>
+
+            <Separator Margin="0,12,0,4" />
+
+            <ci:IconText Glyph="&#xE9D2;" Text="操作历史" Margin="0,0,0,4" />
+
+            <!-- 操作历史 -->
+            <Border Background="#03000000"
+                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8">
+                <Grid RowDefinitions="Auto,*">
+                    <Border BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="0,0,0,1"
+                            Padding="10,8">
+                        <Grid ColumnDefinitions="140,*,120,100" ColumnSpacing="8">
+                            <TextBlock Grid.Column="0" Text="时间" FontWeight="SemiBold" />
+                            <TextBlock Grid.Column="1" Text="文件" FontWeight="SemiBold" />
+                            <TextBlock Grid.Column="2" Text="匹配规则" FontWeight="SemiBold" />
+                            <TextBlock Grid.Column="3" Text="状态" FontWeight="SemiBold" />
+                        </Grid>
+                    </Border>
+                    <ListBox x:Name="HistoryListBox"
+                             Grid.Row="1"
+                             MinHeight="120"
+                             MaxHeight="200">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border Padding="12,8" BorderBrush="#10000000" BorderThickness="0,0,0,1">
+                                    <Grid ColumnDefinitions="140,*,120,100" ColumnSpacing="8">
+                                        <TextBlock Grid.Column="0" Text="{Binding Time}" VerticalAlignment="Center" Opacity="0.8" />
+                                        <TextBlock Grid.Column="1" Text="{Binding FileName}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Grid.Column="2" Text="{Binding MatchedRule}" VerticalAlignment="Center" Opacity="0.8" />
+                                        <TextBlock Grid.Column="3" Text="{Binding Status}" VerticalAlignment="Center" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <StackPanel x:Name="HistoryEmptyStatePanel"
+                                Grid.Row="1"
+                                HorizontalAlignment="Center"
+                                IsVisible="True"
+                                Spacing="6"
+                                VerticalAlignment="Center">
+                        <TextBlock FontFamily="Segoe MDL2 Assets, Segoe Fluent Icons, Segoe UI Symbol"
+                                   Text="&#xE81C;"
+                                   FontSize="36"
+                                   Opacity="0.4"
+                                   HorizontalAlignment="Center" />
+                        <TextBlock Text="暂无操作历史"
+                                   Opacity="0.6"
+                                   FontSize="13"
+                                   FontWeight="SemiBold"
+                                   HorizontalAlignment="Center" />
+                        <TextBlock Text="启用监控后，文件整理记录将显示在这里。"
+                                   Opacity="0.5"
+                                   FontSize="11"
+                                   HorizontalAlignment="Center" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Separator Margin="0,12,0,4" />
+
+            <ci:IconText Glyph="&#xE9D9;" Text="高级配置（预留）" Margin="0,0,0,4" />
+
+            <!-- 嵌入模型配置 -->
+            <ui:SettingsExpander Header="智能匹配引擎"
+                                 Description="配置文件智能匹配引擎（未来支持 Text Embeddings 和本地模型）。"
+                                 IsExpanded="False"
+                                 Margin="0,4,0,0">
+                <ui:SettingsExpander.IconSource>
+                    <ui:FontIconSource Glyph="&#xE9D9;" FontFamily="Segoe MDL2 Assets" />
+                </ui:SettingsExpander.IconSource>
+                <ui:SettingsExpanderItem Content="匹配引擎"
+                                         Description="选择文件匹配引擎类型。">
+                    <ui:SettingsExpanderItem.Footer>
+                        <ComboBox x:Name="EmbeddingProviderComboBox"
+                                  Width="180"
+                                  HorizontalAlignment="Stretch"
+                                  SelectionChanged="OnConfigSelectionChanged">
+                            <ComboBoxItem Content="关键字匹配" Tag="keyword" />
+                            <ComboBoxItem Content="本地模型（未实现）" Tag="local" IsEnabled="False" />
+                            <ComboBoxItem Content="远程 API（未实现）" Tag="remote" IsEnabled="False" />
+                            <ComboBoxItem Content="混合模式（未实现）" Tag="hybrid" IsEnabled="False" />
+                        </ComboBox>
+                    </ui:SettingsExpanderItem.Footer>
+                </ui:SettingsExpanderItem>
+                <ui:SettingsExpanderItem Content="相似度阈值"
+                                         Description="嵌入向量相似度阈值（0-1）。">
+                    <ui:SettingsExpanderItem.Footer>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Slider x:Name="SimilarityThresholdSlider"
+                                    Minimum="0"
+                                    Maximum="1"
+                                    Value="0.7"
+                                    Width="160"
+                                    HorizontalAlignment="Left"
+                                    ValueChanged="OnSimilarityThresholdChanged" />
+                            <TextBlock x:Name="SimilarityThresholdText"
+                                       Grid.Column="1"
+                                       Text="0.7"
+                                       Width="40"
+                                       TextAlignment="Right"
+                                       VerticalAlignment="Center"
+                                       Opacity="0.7" />
+                        </Grid>
+                    </ui:SettingsExpanderItem.Footer>
+                </ui:SettingsExpanderItem>
+                <ui:SettingsExpanderItem Content="API 端点"
+                                         Description="远程嵌入 API 端点（如 OpenAI Embeddings）。">
+                    <ui:SettingsExpanderItem.Footer>
+                        <TextBox x:Name="EmbeddingApiEndpointBox"
+                                 Width="320"
+                                 Watermark="https://api.openai.com/v1/embeddings"
+                                 IsEnabled="False" />
+                    </ui:SettingsExpanderItem.Footer>
+                </ui:SettingsExpanderItem>
+                <ui:SettingsExpanderItem Content="API Key"
+                                         Description="远程嵌入 API 密钥。">
+                    <ui:SettingsExpanderItem.Footer>
+                        <TextBox x:Name="EmbeddingApiKeyBox"
+                                 Width="320"
+                                 PasswordChar="*"
+                                 IsEnabled="False" />
+                    </ui:SettingsExpanderItem.Footer>
+                </ui:SettingsExpanderItem>
+                <ui:SettingsExpanderItem Content="模型名称"
+                                         Description="嵌入模型名称。">
+                    <ui:SettingsExpanderItem.Footer>
+                        <TextBox x:Name="EmbeddingModelNameBox"
+                                 Width="320"
+                                 Watermark="text-embedding-3-small"
+                                 IsEnabled="False" />
+                    </ui:SettingsExpanderItem.Footer>
+                </ui:SettingsExpanderItem>
+            </ui:SettingsExpander>
+
+        </StackPanel>
+    </ScrollViewer>
+
+</ci:SettingsPageBase>

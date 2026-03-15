@@ -1,0 +1,9 @@
+apiVersion: 2.0.0.0
+version: 1.0.0.0
+name: Archive-Agent
+description: 文件归档助手 - ClassIsland 自动化插件
+author: Archive-Agent
+repoUrl: 
+icon: 
+id: archive-agent
+entry: ArchiveAgent.dll

@@ -1,0 +1,15 @@
+D:\projects\Archive-Agent\bin\Release\ArchiveAgent.deps.json
+D:\projects\Archive-Agent\bin\Release\ArchiveAgent.dll
+D:\projects\Archive-Agent\bin\Release\ArchiveAgent.pdb
+D:\projects\Archive-Agent\obj\Release\ArchiveAgent.csproj.AssemblyReference.cache
+D:\projects\Archive-Agent\obj\Release\Avalonia\Resources.Inputs.cache
+D:\projects\Archive-Agent\obj\Release\Avalonia\resources
+D:\projects\Archive-Agent\obj\Release\ArchiveAgent.GeneratedMSBuildEditorConfig.editorconfig
+D:\projects\Archive-Agent\obj\Release\ArchiveAgent.AssemblyInfoInputs.cache
+D:\projects\Archive-Agent\obj\Release\ArchiveAgent.AssemblyInfo.cs
+D:\projects\Archive-Agent\obj\Release\ArchiveAgent.csproj.CoreCompileInputs.cache
+D:\projects\Archive-Agent\obj\Release\ArchiveAgent.sourcelink.json
+D:\projects\Archive-Agent\obj\Release\ArchiveAgent.dll
+D:\projects\Archive-Agent\obj\Release\refint\ArchiveAgent.dll
+D:\projects\Archive-Agent\obj\Release\ArchiveAgent.pdb
+D:\projects\Archive-Agent\obj\Release\ref\ArchiveAgent.dll
