@@ -1,0 +1,36 @@
+# .NET
+bin/
+obj/
+*.user
+*.userosscache
+*.sln.docstates
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv
+env/
+venv/
+# Project Specific
+Assets_Duty/data/ipc_input.json
+Assets_Duty/data/ipc_result.json
+Assets_Duty/data/*.tmp
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+.gitnexus
+.claude/
+*.html
+
+# Useless Tracking Files
+.dotnet/
+.dotnet-home/
+.tmp/
+CLAUDE.md
+deploy.bat
+gitignore
+*.cipx
