@@ -70,3 +70,21 @@ public sealed class ArchiveProcessedFileResult
     [JsonPropertyName("matched_keyword")]
     public string? MatchedKeyword { get; set; }
 }
+
+public sealed class ArchiveUndoRequest
+{
+    [JsonPropertyName("target_path")]
+    public string TargetPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("operation")]
+    public string Operation { get; set; } = "organize";
+}
+
+public sealed class ArchiveUndoResult
+{
+    [JsonPropertyName("success")]
+    public bool Success { get; set; }
+
+    [JsonPropertyName("message")]
+    public string Message { get; set; } = string.Empty;
+}

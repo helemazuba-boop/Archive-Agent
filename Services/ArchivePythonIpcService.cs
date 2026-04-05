@@ -49,6 +49,14 @@ public interface IArchivePythonIpcService : IDisposable
     ArchiveEngineState State { get; }
 
     string? LastErrorMessage { get; }
+
+    string BaseUrl { get; }
+
+    Task<ArchiveUndoResult> UndoOperationAsync(
+        ArchiveUndoRequest request,
+        string requestSource = "undo",
+        string? traceId = null,
+        CancellationToken cancellationToken = default);
 }
 
 public enum ArchiveEngineState
@@ -106,6 +114,8 @@ public sealed class ArchivePythonIpcService : IArchivePythonIpcService
     }
 
     public string? LastErrorMessage { get; private set; }
+
+    public string BaseUrl => $"http://127.0.0.1:{_serverPort}";
 
     public async Task EnsureReadyAsync(CancellationToken cancellationToken = default)
     {
@@ -202,6 +212,15 @@ public sealed class ArchivePythonIpcService : IArchivePythonIpcService
         CancellationToken cancellationToken = default)
     {
         return SendJsonAsync<ArchiveRunResult>(HttpMethod.Post, "/api/v1/archive/run", request, requestSource, traceId, cancellationToken);
+    }
+
+    public Task<ArchiveUndoResult> UndoOperationAsync(
+        ArchiveUndoRequest request,
+        string requestSource = "undo",
+        string? traceId = null,
+        CancellationToken cancellationToken = default)
+    {
+        return SendJsonAsync<ArchiveUndoResult>(HttpMethod.Post, "/api/v1/archive/undo", request, requestSource, traceId, cancellationToken);
     }
 
     private Task EnsureStartedAsync()

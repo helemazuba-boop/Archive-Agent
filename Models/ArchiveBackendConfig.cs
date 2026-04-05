@@ -11,7 +11,7 @@ public sealed class ArchiveBackendConfig
     public bool OverwriteExisting { get; set; }
 
     [JsonPropertyName("keyword_rules")]
-    public List<KeywordRule> KeywordRules { get; set; } = [];
+    public List<KeywordRule> KeywordRules { get; set; } = new();
 
     [JsonPropertyName("embedding_provider")]
     public string EmbeddingProvider { get; set; } = "keyword";
@@ -30,6 +30,33 @@ public sealed class ArchiveBackendConfig
 
     [JsonPropertyName("embedding_similarity_threshold")]
     public double EmbeddingSimilarityThreshold { get; set; } = 0.7;
+
+    [JsonPropertyName("llm_enabled")]
+    public bool LlmEnabled { get; set; } = false;
+
+    [JsonPropertyName("llm_api_endpoint")]
+    public string? LlmApiEndpoint { get; set; }
+
+    [JsonPropertyName("llm_api_key")]
+    public string? LlmApiKey { get; set; }
+
+    [JsonPropertyName("llm_model_name")]
+    public string? LlmModelName { get; set; }
+
+    [JsonPropertyName("llm_fallback_threshold")]
+    public double LlmFallbackThreshold { get; set; } = 0.5;
+
+    [JsonPropertyName("llm_include_content")]
+    public bool LlmIncludeContent { get; set; } = false;
+
+    [JsonPropertyName("llm_content_max_chars")]
+    public int LlmContentMaxChars { get; set; } = 2048;
+
+    [JsonPropertyName("scheduled_enabled")]
+    public bool ScheduledEnabled { get; set; } = false;
+
+    [JsonPropertyName("scheduled_interval_minutes")]
+    public int ScheduledIntervalMinutes { get; set; } = 60;
 }
 
 public sealed class ArchiveBackendConfigPatch
@@ -69,6 +96,42 @@ public sealed class ArchiveBackendConfigPatch
     [JsonPropertyName("embedding_similarity_threshold")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public double? EmbeddingSimilarityThreshold { get; set; }
+
+    [JsonPropertyName("llm_enabled")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? LlmEnabled { get; set; }
+
+    [JsonPropertyName("llm_api_endpoint")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? LlmApiEndpoint { get; set; }
+
+    [JsonPropertyName("llm_api_key")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? LlmApiKey { get; set; }
+
+    [JsonPropertyName("llm_model_name")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? LlmModelName { get; set; }
+
+    [JsonPropertyName("llm_fallback_threshold")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public double? LlmFallbackThreshold { get; set; }
+
+    [JsonPropertyName("llm_include_content")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? LlmIncludeContent { get; set; }
+
+    [JsonPropertyName("llm_content_max_chars")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? LlmContentMaxChars { get; set; }
+
+    [JsonPropertyName("scheduled_enabled")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? ScheduledEnabled { get; set; }
+
+    [JsonPropertyName("scheduled_interval_minutes")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? ScheduledIntervalMinutes { get; set; }
 }
 
 public sealed class ArchiveBackendSnapshot

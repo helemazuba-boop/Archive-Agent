@@ -1,4 +1,5 @@
-﻿using FileSorter.Business.DirectoryManagers;
+using System.Collections.Concurrent;
+using FileSorter.Business.DirectoryManagers;
 
 namespace FileSorter.Business
 {
@@ -15,37 +16,36 @@ namespace FileSorter.Business
             _view = view;
         }
 
-        public async Task Organise(string[] files, string destination)
+    public async Task Organise(string[] files, string destination)
+    {
+        var duplicateErrors = new ConcurrentBag<string>();
+        await Parallel.ForEachAsync(files, async (file, token) =>
         {
-            var showWarning = false;
-            await Parallel.ForEachAsync(files, async (file, token) =>
+            var fileInfo = new ReadonlyFileInfo(new FileInfo(file));
+            await _view.ShowStartCopy(fileInfo);
+
+            var folderDestination = _directoryManager.GetFolderDestination(destination, fileInfo);
+            var newName = _directoryManager.GetNewFileName(folderDestination, fileInfo);
+            if (File.Exists(newName)) return;
+
+            FileDirectory.CreateDirectoryIfNew(folderDestination);
+
+            try
             {
-                var fileInfo = new ReadonlyFileInfo(new FileInfo(file));
-                await _view.ShowStartCopy(fileInfo);
+                using var sourceStream = _streamFactory.CreateSourceStream(file);
+                using var destinationStream = _streamFactory.CreateDestinationStream(newName);
+                await sourceStream.CopyToAsync(destinationStream, token);
+            }
+            catch (IOException)
+            {
+                await _view.ShowDuplicateError(fileInfo);
+                duplicateErrors.Add(file);
+            }
 
-                var folderDestination = _directoryManager.GetFolderDestination(destination, fileInfo);
+            await _view.ShowEndCopy(fileInfo);
+        });
 
-                var newName = _directoryManager.GetNewFileName(folderDestination, fileInfo);
-                if (File.Exists(newName)) return;
-
-                FileDirectory.CreateDirectoryIfNew(folderDestination);
-
-                try
-                {
-                    using var sourceStream = _streamFactory.CreateSourceStream(file);
-                        using var destinationStream = _streamFactory.CreateDestinationStream(newName);
-                            await sourceStream.CopyToAsync(destinationStream, token);
-                }
-                catch (IOException)
-                {
-                    await _view.ShowDuplicateError(fileInfo);
-                    showWarning = true;
-                }
-
-                await _view.ShowEndCopy(fileInfo);
-            });
-
-            if (showWarning) await _view.ShowWarning();
-        }
+        if (!duplicateErrors.IsEmpty) await _view.ShowWarning();
+    }
     }
 }

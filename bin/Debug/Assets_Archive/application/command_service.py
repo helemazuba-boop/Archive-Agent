@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from state_ops import Context, build_match_result, execute_archive_run, patch_config
+from state_ops import Context, build_match_result, execute_archive_run, patch_config, undo_operation as state_undo_operation
 
 
 class CommandService:
@@ -36,3 +36,7 @@ class CommandService:
         )
         self._runtime.logger.info("run_archive trace=%s source=%s", context.trace_id, request_source)
         return execute_archive_run(context, payload)
+
+    def undo_operation(self, target_path: str, operation: str = "organize"):
+        self._runtime.logger.info("undo_operation target=%s operation=%s", target_path, operation)
+        return state_undo_operation(target_path, operation)

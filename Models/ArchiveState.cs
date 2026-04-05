@@ -5,7 +5,7 @@ namespace ArchiveAgent.Models;
 public sealed class ArchiveState
 {
     [JsonPropertyName("operation_history")]
-    public List<ArchiveHistoryRecord> OperationHistory { get; set; } = [];
+    public List<ArchiveHistoryRecord> OperationHistory { get; set; } = new();
 
     [JsonPropertyName("last_processed_at")]
     public DateTimeOffset? LastProcessedAt { get; set; }

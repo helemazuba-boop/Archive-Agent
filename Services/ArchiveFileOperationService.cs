@@ -32,7 +32,7 @@ public class ArchiveFileOperationService
             };
             process.Start();
         }
-        catch (Exception ex)
+        catch
         {
             // 如果 /select 失败，尝试直接打开所在目录
             try

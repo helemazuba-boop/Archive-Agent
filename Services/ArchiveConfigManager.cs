@@ -118,11 +118,30 @@ public sealed class ArchiveConfigManager : IArchiveConfigManager, IDisposable
             return;
         }
 
-        Task.Run(() =>
+        Task.Run(async () =>
         {
-            Thread.Sleep(50);
-            LoadConfigInternal();
+            await ReloadWithRetryAsync(LoadConfigInternal);
         });
+    }
+
+    private static async Task ReloadWithRetryAsync(Action reloadAction, int maxRetries = 5)
+    {
+        Exception? lastEx = null;
+        for (var i = 0; i < maxRetries; i++)
+        {
+            try
+            {
+                Thread.Sleep(50 << i);
+                reloadAction();
+                return;
+            }
+            catch (IOException ex)
+            {
+                lastEx = ex;
+            }
+        }
+        ArchiveDiagnosticsLogger.Warn("ConfigManager", "Failed to reload config after retries.",
+            new { retries = maxRetries, lastError = lastEx?.Message });
     }
 
     public void Dispose()

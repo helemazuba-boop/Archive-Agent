@@ -7,7 +7,9 @@
                      xmlns:ui="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
                      xmlns:local="clr-namespace:ArchiveAgent.Views.SettingPages"
                      x:DataType="local:ArchiveMainSettingsPage"
+                     x:Name="Root"
                      d:DataContext="{d:DesignInstance local:ArchiveMainSettingsPage}"
+                     Unloaded="OnUnloaded"
                      mc:Ignorable="d">
 
     <ScrollViewer HorizontalScrollBarVisibility="Disabled">
@@ -87,6 +89,27 @@
                                       IsCheckedChanged="OnConfigToggleChanged" />
                     </ui:SettingsExpanderItem.Footer>
                 </ui:SettingsExpanderItem>
+                <ui:SettingsExpanderItem Content="定时触发整理"
+                                         Description="按固定间隔扫描监控目录并整理文件。">
+                    <ui:SettingsExpanderItem.Footer>
+                        <ToggleSwitch x:Name="ScheduledEnabledToggle"
+                                      IsChecked="False"
+                                      IsCheckedChanged="OnScheduledEnabledToggled" />
+                    </ui:SettingsExpanderItem.Footer>
+                </ui:SettingsExpanderItem>
+                <ui:SettingsExpanderItem Content="定时间隔"
+                                         Description="定时触发的间隔（分钟）。">
+                    <ui:SettingsExpanderItem.Footer>
+                        <NumericUpDown x:Name="ScheduledIntervalBox"
+                                       Minimum="1"
+                                       Maximum="1440"
+                                       Increment="15"
+                                       Value="60"
+                                       Width="120"
+                                       IsEnabled="False"
+                                       ValueChanged="OnScheduledIntervalChanged" />
+                    </ui:SettingsExpanderItem.Footer>
+                </ui:SettingsExpanderItem>
             </ui:SettingsExpander>
 
             <!-- 关键字规则 -->
@@ -121,17 +144,28 @@
                                         Click="OnAddRuleClick"
                                         Content="添加" />
                             </Grid>
-                            <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
+                            <Grid ColumnDefinitions="Auto,*,Auto,*,Auto,Auto" ColumnSpacing="8">
                                 <CheckBox x:Name="MatchFileNameCheckBox" Content="匹配文件名" IsChecked="True" />
                                 <CheckBox x:Name="MatchExtensionCheckBox" Content="匹配扩展名" IsChecked="False" Grid.Column="2" />
-                                <TextBlock Grid.Column="3" Text="优先级" VerticalAlignment="Center" Opacity="0.8" Margin="8,0,0,0" />
+                                <TextBlock Grid.Column="3" Text="匹配模式" VerticalAlignment="Center" Opacity="0.8" Margin="8,0,0,0" />
+                                <ComboBox x:Name="NewRuleMatchModeComboBox"
+                                          Grid.Column="4"
+                                          Width="100"
+                                          SelectedIndex="0">
+                                    <ComboBoxItem Content="词匹配" Tag="word" ToolTip.Tip="仅当关键字作为完整词出现时匹配" />
+                                    <ComboBoxItem Content="前缀" Tag="prefix" ToolTip.Tip="文件名以关键字开头" />
+                                    <ComboBoxItem Content="后缀" Tag="suffix" ToolTip.Tip="文件名（不含扩展名）以关键字结尾" />
+                                    <ComboBoxItem Content="完整" Tag="exact" ToolTip.Tip="文件名（不含扩展名）完全等于关键字" />
+                                    <ComboBoxItem Content="子串" Tag="substring" ToolTip.Tip="文件名任意位置包含关键字" />
+                                </ComboBox>
+                                <TextBlock Grid.Column="5" Text="优先级" VerticalAlignment="Center" Opacity="0.8" Margin="8,0,0,0" />
                                 <NumericUpDown x:Name="NewRulePriorityBox"
-                                               Grid.Column="3"
+                                               Grid.Column="5"
                                                Width="80"
                                                Minimum="0"
                                                Maximum="100"
                                                Value="0"
-                                               Margin="48,0,0,0" />
+                                               Margin="56,0,0,0" />
                             </Grid>
                         </StackPanel>
                     </Border>
@@ -145,13 +179,14 @@
                             <Border BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                                     BorderThickness="0,0,0,1"
                                     Padding="10,8">
-                                <Grid ColumnDefinitions="40,*,*,80,60,60" ColumnSpacing="8">
+                                <Grid ColumnDefinitions="40,*,*,70,70,60,60" ColumnSpacing="8">
                                     <TextBlock Grid.Column="0" Text="启" FontWeight="SemiBold" Opacity="0.7" />
                                     <TextBlock Grid.Column="1" Text="关键字" FontWeight="SemiBold" />
                                     <TextBlock Grid.Column="2" Text="目标目录" FontWeight="SemiBold" />
-                                    <TextBlock Grid.Column="3" Text="类型" FontWeight="SemiBold" Opacity="0.8" />
-                                    <TextBlock Grid.Column="4" Text="优先级" FontWeight="SemiBold" Opacity="0.8" />
-                                    <TextBlock Grid.Column="5" Text="操作" FontWeight="SemiBold" Opacity="0.8" />
+                                    <TextBlock Grid.Column="3" Text="模式" FontWeight="SemiBold" Opacity="0.8" />
+                                    <TextBlock Grid.Column="4" Text="类型" FontWeight="SemiBold" Opacity="0.8" />
+                                    <TextBlock Grid.Column="5" Text="优先级" FontWeight="SemiBold" Opacity="0.8" />
+                                    <TextBlock Grid.Column="6" Text="操作" FontWeight="SemiBold" Opacity="0.8" />
                                 </Grid>
                             </Border>
                             <ListBox x:Name="RulesListBox"
@@ -161,7 +196,7 @@
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <Border Padding="10,8" BorderBrush="#10000000" BorderThickness="0,0,0,1">
-                                            <Grid ColumnDefinitions="40,*,*,80,60,60" ColumnSpacing="8">
+                                            <Grid ColumnDefinitions="40,*,*,70,70,60,60" ColumnSpacing="8">
                                                 <CheckBox Grid.Column="0"
                                                           IsChecked="{Binding IsEnabled}"
                                                           IsThreeState="False" />
@@ -174,18 +209,25 @@
                                                            VerticalAlignment="Center"
                                                            TextTrimming="CharacterEllipsis" />
                                                 <TextBlock Grid.Column="3"
+                                                           Text="{Binding MatchMode, Converter={StaticResource MatchModeConverter}}"
+                                                           VerticalAlignment="Center"
+                                                           Opacity="0.7"
+                                                           ToolTip.Tip="{Binding MatchMode}" />
+                                                <TextBlock Grid.Column="4"
                                                            VerticalAlignment="Center"
                                                            Opacity="0.7">
-                                                    <MultiBinding StringFormat="{}{0}{1}">
+                                                    <TextBlock.Text>
+                                                        <MultiBinding StringFormat="{}{0}{1}">
                                                         <Binding Path="MatchFileName" Converter="{StaticResource BoolToTextConverter}" ConverterParameter="名" />
                                                         <Binding Path="MatchExtension" Converter="{StaticResource BoolToTextConverter}" ConverterParameter="扩" />
-                                                    </MultiBinding>
+                                                        </MultiBinding>
+                                                    </TextBlock.Text>
                                                 </TextBlock>
-                                                <TextBlock Grid.Column="4"
+                                                <TextBlock Grid.Column="5"
                                                            Text="{Binding Priority}"
                                                            VerticalAlignment="Center"
                                                            Opacity="0.7" />
-                                                <Button Grid.Column="5"
+                                                <Button Grid.Column="6"
                                                         Content="删除"
                                                         FontSize="12"
                                                         Padding="8,4"
@@ -235,11 +277,12 @@
                     <Border BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                             BorderThickness="0,0,0,1"
                             Padding="10,8">
-                        <Grid ColumnDefinitions="140,*,120,100" ColumnSpacing="8">
+                        <Grid ColumnDefinitions="140,*,120,100,80" ColumnSpacing="8">
                             <TextBlock Grid.Column="0" Text="时间" FontWeight="SemiBold" />
                             <TextBlock Grid.Column="1" Text="文件" FontWeight="SemiBold" />
                             <TextBlock Grid.Column="2" Text="匹配规则" FontWeight="SemiBold" />
                             <TextBlock Grid.Column="3" Text="状态" FontWeight="SemiBold" />
+                            <TextBlock Grid.Column="4" Text="操作" FontWeight="SemiBold" Opacity="0.8" />
                         </Grid>
                     </Border>
                     <ListBox x:Name="HistoryListBox"
@@ -249,11 +292,18 @@
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <Border Padding="12,8" BorderBrush="#10000000" BorderThickness="0,0,0,1">
-                                    <Grid ColumnDefinitions="140,*,120,100" ColumnSpacing="8">
+                                    <Grid ColumnDefinitions="140,*,120,100,80" ColumnSpacing="8">
                                         <TextBlock Grid.Column="0" Text="{Binding Time}" VerticalAlignment="Center" Opacity="0.8" />
                                         <TextBlock Grid.Column="1" Text="{Binding FileName}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                                         <TextBlock Grid.Column="2" Text="{Binding MatchedRule}" VerticalAlignment="Center" Opacity="0.8" />
                                         <TextBlock Grid.Column="3" Text="{Binding Status}" VerticalAlignment="Center" />
+                                        <Button Grid.Column="4"
+                                                Content="撤销"
+                                                FontSize="12"
+                                                Padding="8,4"
+                                                IsVisible="{Binding CanUndo}"
+                                                Click="OnUndoHistoryClick"
+                                                Tag="{Binding TargetPath}" />
                                     </Grid>
                                 </Border>
                             </DataTemplate>
@@ -289,58 +339,32 @@
 
             <!-- 嵌入模型配置 -->
             <ui:SettingsExpander Header="智能匹配引擎"
-                                 Description="配置文件智能匹配引擎（未来支持 Text Embeddings 和本地模型）。"
+                                 Description="关键字规则优先匹配；未命中时，可启用 LLM 智能分类兜底。支持 OpenAI / Azure / Ollama / SiliconFlow 等兼容 API。"
                                  IsExpanded="False"
                                  Margin="0,4,0,0">
                 <ui:SettingsExpander.IconSource>
                     <ui:FontIconSource Glyph="&#xE9D9;" FontFamily="Segoe MDL2 Assets" />
                 </ui:SettingsExpander.IconSource>
-                <ui:SettingsExpanderItem Content="匹配引擎"
-                                         Description="选择文件匹配引擎类型。">
+                <ui:SettingsExpanderItem Content="启用 LLM 智能分类"
+                                         Description="关键字未命中时，调用大语言模型推荐分类目录。">
                     <ui:SettingsExpanderItem.Footer>
-                        <ComboBox x:Name="EmbeddingProviderComboBox"
-                                  Width="180"
-                                  HorizontalAlignment="Stretch"
-                                  SelectionChanged="OnConfigSelectionChanged">
-                            <ComboBoxItem Content="关键字匹配" Tag="keyword" />
-                            <ComboBoxItem Content="本地模型（未实现）" Tag="local" IsEnabled="False" />
-                            <ComboBoxItem Content="远程 API（未实现）" Tag="remote" IsEnabled="False" />
-                            <ComboBoxItem Content="混合模式（未实现）" Tag="hybrid" IsEnabled="False" />
-                        </ComboBox>
-                    </ui:SettingsExpanderItem.Footer>
-                </ui:SettingsExpanderItem>
-                <ui:SettingsExpanderItem Content="相似度阈值"
-                                         Description="嵌入向量相似度阈值（0-1）。">
-                    <ui:SettingsExpanderItem.Footer>
-                        <Grid ColumnDefinitions="*,Auto">
-                            <Slider x:Name="SimilarityThresholdSlider"
-                                    Minimum="0"
-                                    Maximum="1"
-                                    Value="0.7"
-                                    Width="160"
-                                    HorizontalAlignment="Left"
-                                    ValueChanged="OnSimilarityThresholdChanged" />
-                            <TextBlock x:Name="SimilarityThresholdText"
-                                       Grid.Column="1"
-                                       Text="0.7"
-                                       Width="40"
-                                       TextAlignment="Right"
-                                       VerticalAlignment="Center"
-                                       Opacity="0.7" />
-                        </Grid>
+                        <ToggleSwitch x:Name="LlmEnabledToggle"
+                                      OnContent="开"
+                                      OffContent="关"
+                                      IsCheckedChanged="OnLlmEnabledToggled" />
                     </ui:SettingsExpanderItem.Footer>
                 </ui:SettingsExpanderItem>
                 <ui:SettingsExpanderItem Content="API 端点"
-                                         Description="远程嵌入 API 端点（如 OpenAI Embeddings）。">
+                                         Description="OpenAI 兼容的 chat completions 端点。留空则使用 OpenAI 官方。">
                     <ui:SettingsExpanderItem.Footer>
                         <TextBox x:Name="EmbeddingApiEndpointBox"
                                  Width="320"
-                                 Watermark="https://api.openai.com/v1/embeddings"
+                                 Watermark="https://api.openai.com/v1/chat/completions"
                                  IsEnabled="False" />
                     </ui:SettingsExpanderItem.Footer>
                 </ui:SettingsExpanderItem>
                 <ui:SettingsExpanderItem Content="API Key"
-                                         Description="远程嵌入 API 密钥。">
+                                         Description="API 密钥（本地模型如 Ollama 可留空）。">
                     <ui:SettingsExpanderItem.Footer>
                         <TextBox x:Name="EmbeddingApiKeyBox"
                                  Width="320"
@@ -349,12 +373,55 @@
                     </ui:SettingsExpanderItem.Footer>
                 </ui:SettingsExpanderItem>
                 <ui:SettingsExpanderItem Content="模型名称"
-                                         Description="嵌入模型名称。">
+                                         Description="模型名称，如 gpt-4o-mini / ollama/llama3 / deepseek-chat。">
                     <ui:SettingsExpanderItem.Footer>
                         <TextBox x:Name="EmbeddingModelNameBox"
                                  Width="320"
-                                 Watermark="text-embedding-3-small"
+                                 Watermark="gpt-4o-mini"
                                  IsEnabled="False" />
+                    </ui:SettingsExpanderItem.Footer>
+                </ui:SettingsExpanderItem>
+                <ui:SettingsExpanderItem Content="置信度阈值"
+                                         Description="LLM 返回 confidence &gt;= 此值时采纳推荐目录（0-1）。">
+                    <ui:SettingsExpanderItem.Footer>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Slider x:Name="SimilarityThresholdSlider"
+                                    Minimum="0"
+                                    Maximum="1"
+                                    Value="0.5"
+                                    Width="160"
+                                    HorizontalAlignment="Left"
+                                    ValueChanged="OnSimilarityThresholdChanged" />
+                            <TextBlock x:Name="SimilarityThresholdText"
+                                       Grid.Column="1"
+                                       Text="0.5"
+                                       Width="40"
+                                       TextAlignment="Right"
+                                       VerticalAlignment="Center"
+                                       Opacity="0.7" />
+                        </Grid>
+                    </ui:SettingsExpanderItem.Footer>
+                </ui:SettingsExpanderItem>
+                <ui:SettingsExpanderItem Content="发送文件内容预览"
+                                         Description="将文件开头内容发送给 LLM，提升分类准确率。仅支持文本格式文件。">
+                    <ui:SettingsExpanderItem.Footer>
+                        <ToggleSwitch x:Name="LlmIncludeContentToggle"
+                                      OnContent="开"
+                                      OffContent="关"
+                                      IsCheckedChanged="OnLlmIncludeContentToggled" />
+                    </ui:SettingsExpanderItem.Footer>
+                </ui:SettingsExpanderItem>
+                <ui:SettingsExpanderItem Content="内容读取长度"
+                                         Description="提取文件开头多少字符发送给 LLM（默认 2048）。">
+                    <ui:SettingsExpanderItem.Footer>
+                        <NumericUpDown x:Name="LlmContentMaxCharsBox"
+                                       Minimum="128"
+                                       Maximum="8192"
+                                       Increment="128"
+                                       Value="2048"
+                                       Width="120"
+                                       IsEnabled="False"
+                                       ValueChanged="OnLlmContentMaxCharsChanged" />
                     </ui:SettingsExpanderItem.Footer>
                 </ui:SettingsExpanderItem>
             </ui:SettingsExpander>

@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Text.Json.Serialization;
 
 namespace ArchiveAgent.Models;
 
@@ -13,6 +14,13 @@ public class KeywordRule
     public bool IsEnabled { get; set; } = true;
     public bool MatchFileName { get; set; } = true;
     public bool MatchExtension { get; set; } = false;
+
+    /// <summary>
+    /// 匹配模式：prefix（前缀）| suffix（后缀）| exact（完整匹配）| word（词匹配，默认）| substring（子串）
+    /// </summary>
+    [JsonPropertyName("match_mode")]
+    public string MatchMode { get; set; } = "word";
+
     public int Priority { get; set; } = 0;
 }
 
@@ -98,11 +106,67 @@ public class ArchiveConfig
     /// </summary>
     public double EmbeddingSimilarityThreshold { get; set; } = 0.7;
 
+    /// <summary>
+    /// 定时触发配置
+    /// </summary>
+    public bool ScheduledEnabled { get; set; } = false;
+
+    /// <summary>
+    /// 定时触发间隔（分钟）
+    /// </summary>
+    public int ScheduledIntervalMinutes { get; set; } = 60;
+
+    #endregion
+
+    #region LLM 分类配置
+
+    /// <summary>
+    /// 是否启用 LLM 智能分类
+    /// </summary>
+    [JsonPropertyName("llm_enabled")]
+    public bool LlmEnabled { get; set; } = false;
+
+    /// <summary>
+    /// LLM API 端点（OpenAI 兼容）
+    /// </summary>
+    [JsonPropertyName("llm_api_endpoint")]
+    public string? LlmApiEndpoint { get; set; }
+
+    /// <summary>
+    /// LLM API 密钥
+    /// </summary>
+    [JsonPropertyName("llm_api_key")]
+    public string? LlmApiKey { get; set; }
+
+    /// <summary>
+    /// LLM 模型名称
+    /// </summary>
+    [JsonPropertyName("llm_model_name")]
+    public string? LlmModelName { get; set; }
+
+    /// <summary>
+    /// LLM 分类置信度阈值（0-1）
+    /// </summary>
+    [JsonPropertyName("llm_fallback_threshold")]
+    public double LlmFallbackThreshold { get; set; } = 0.5;
+
+    /// <summary>
+    /// 是否发送文件内容预览给 LLM
+    /// </summary>
+    [JsonPropertyName("llm_include_content")]
+    public bool LlmIncludeContent { get; set; } = false;
+
+    /// <summary>
+    /// 文件内容预览的最大字符数
+    /// </summary>
+    [JsonPropertyName("llm_content_max_chars")]
+    public int LlmContentMaxChars { get; set; } = 2048;
+
     #endregion
 
     private static string GetDefaultDesktopPath()
     {
-        return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop));
+        return Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
     }
 }
 

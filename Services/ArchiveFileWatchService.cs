@@ -43,7 +43,7 @@ public sealed class ArchiveFileWatchService : IDisposable
         _debounceTimer.Elapsed += OnDebounceTimerElapsed;
     }
 
-    public void Initialize()
+    public void Initialize(CancellationToken cancellationToken = default)
     {
         LoadConfig();
         if (Config.IsWatchEnabled)
@@ -202,15 +202,15 @@ public sealed class ArchiveFileWatchService : IDisposable
 
     private async Task ProcessPendingChangesAsync()
     {
-        if (_isProcessing)
-        {
-            return;
-        }
-
         List<FileChangeEvent> changesToProcess;
         lock (_lock)
         {
             if (_pendingChanges.Count == 0)
+            {
+                return;
+            }
+
+            if (_isProcessing)
             {
                 return;
             }
@@ -225,12 +225,22 @@ public sealed class ArchiveFileWatchService : IDisposable
             foreach (var change in changesToProcess)
             {
                 FileChanged?.Invoke(this, change);
-                await ProcessFileAsync(change);
+                await ProcessFileAsync(change).ConfigureAwait(false);
             }
         }
         finally
         {
-            _isProcessing = false;
+            bool hasMore;
+            lock (_lock)
+            {
+                hasMore = _pendingChanges.Count > 0;
+                _isProcessing = false;
+            }
+
+            if (hasMore)
+            {
+                _ = ProcessPendingChangesAsync();
+            }
         }
     }
 
@@ -272,7 +282,12 @@ public sealed class ArchiveFileWatchService : IDisposable
 
             if (success && Config.ShowNotification)
             {
-                _notificationService.Publish("Archive complete", message);
+                _notificationService.Publish(
+                    "Archive complete",
+                    message,
+                    8,
+                    targetPath,
+                    ArchiveOrchestrator.NormalizeOperation(Config.DefaultOperation));
             }
 
             if (success && Config.OpenExplorerAfterOperation && !string.IsNullOrWhiteSpace(targetPath))

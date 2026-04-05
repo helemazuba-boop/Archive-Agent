@@ -116,11 +116,30 @@ public sealed class ArchiveStateManager : IArchiveStateManager, IDisposable
             return;
         }
 
-        Task.Run(() =>
+        Task.Run(async () =>
         {
-            Thread.Sleep(50);
-            StateChanged?.Invoke(this, LoadState());
+            await ReloadWithRetryAsync(() => StateChanged?.Invoke(this, LoadState()));
         });
+    }
+
+    private static async Task ReloadWithRetryAsync(Action reloadAction, int maxRetries = 5)
+    {
+        Exception? lastEx = null;
+        for (var i = 0; i < maxRetries; i++)
+        {
+            try
+            {
+                Thread.Sleep(50 << i);
+                reloadAction();
+                return;
+            }
+            catch (IOException ex)
+            {
+                lastEx = ex;
+            }
+        }
+        ArchiveDiagnosticsLogger.Warn("StateManager", "Failed to reload state after retries.",
+            new { retries = maxRetries, lastError = lastEx?.Message });
     }
 
     public void Dispose()

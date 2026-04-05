@@ -93,6 +93,18 @@ public sealed class ArchiveOrchestrator
             cancellationToken);
     }
 
+    public Task<ArchiveUndoResult> UndoOperationAsync(
+        string targetPath,
+        string operation = "organize",
+        CancellationToken cancellationToken = default)
+    {
+        return _pythonIpcService.UndoOperationAsync(
+            new ArchiveUndoRequest { TargetPath = targetPath, Operation = operation },
+            "undo",
+            null,
+            cancellationToken);
+    }
+
     public void StartRuntime()
     {
         if (Interlocked.Exchange(ref _runtimeStarted, 1) == 1)
@@ -137,7 +149,16 @@ public sealed class ArchiveOrchestrator
             EmbeddingApiEndpoint = backendConfig.EmbeddingApiEndpoint,
             EmbeddingApiKey = backendConfig.EmbeddingApiKey,
             EmbeddingModelName = backendConfig.EmbeddingModelName,
-            EmbeddingSimilarityThreshold = backendConfig.EmbeddingSimilarityThreshold
+            EmbeddingSimilarityThreshold = backendConfig.EmbeddingSimilarityThreshold,
+            LlmEnabled = backendConfig.LlmEnabled,
+            LlmApiEndpoint = backendConfig.LlmApiEndpoint,
+            LlmApiKey = backendConfig.LlmApiKey,
+            LlmModelName = backendConfig.LlmModelName,
+            LlmFallbackThreshold = backendConfig.LlmFallbackThreshold,
+            LlmIncludeContent = backendConfig.LlmIncludeContent,
+            LlmContentMaxChars = backendConfig.LlmContentMaxChars,
+            ScheduledEnabled = backendConfig.ScheduledEnabled,
+            ScheduledIntervalMinutes = backendConfig.ScheduledIntervalMinutes,
         };
     }
 
@@ -153,7 +174,16 @@ public sealed class ArchiveOrchestrator
             EmbeddingApiEndpoint = NormalizeOptionalText(config.EmbeddingApiEndpoint),
             EmbeddingApiKey = NormalizeOptionalText(config.EmbeddingApiKey),
             EmbeddingModelName = NormalizeOptionalText(config.EmbeddingModelName),
-            EmbeddingSimilarityThreshold = Math.Clamp(config.EmbeddingSimilarityThreshold, 0.0, 1.0)
+            EmbeddingSimilarityThreshold = Math.Clamp(config.EmbeddingSimilarityThreshold, 0.0, 1.0),
+            LlmEnabled = config.LlmEnabled,
+            LlmApiEndpoint = NormalizeOptionalText(config.LlmApiEndpoint),
+            LlmApiKey = NormalizeOptionalText(config.LlmApiKey),
+            LlmModelName = NormalizeOptionalText(config.LlmModelName),
+            LlmFallbackThreshold = Math.Clamp(config.LlmFallbackThreshold, 0.0, 1.0),
+            LlmIncludeContent = config.LlmIncludeContent,
+            LlmContentMaxChars = Math.Clamp(config.LlmContentMaxChars, 128, 8192),
+            ScheduledEnabled = config.ScheduledEnabled,
+            ScheduledIntervalMinutes = Math.Max(1, config.ScheduledIntervalMinutes),
         };
     }
 
@@ -196,6 +226,7 @@ public sealed class ArchiveOrchestrator
             IsEnabled = rule.IsEnabled,
             MatchFileName = rule.MatchFileName,
             MatchExtension = rule.MatchExtension,
+            MatchMode = rule.MatchMode,
             Priority = rule.Priority
         };
     }

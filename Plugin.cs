@@ -26,10 +26,13 @@ public class Plugin : PluginBase
         services.AddSingleton<IArchiveStateManager, ArchiveStateManager>();
         services.AddSingleton<IArchivePythonIpcService, ArchivePythonIpcService>();
         services.AddSingleton<ArchiveOrchestrator>();
+        services.AddSingleton<ArchiveWindowsToastService>();
         services.AddSingleton<ArchiveNotificationService>();
         services.AddSingleton<ArchiveAutomationBridgeService>();
         services.AddSingleton<ArchiveFileOperationService>();
         services.AddSingleton<ArchiveFileWatchService>();
+        services.AddSingleton<ArchiveScheduledTriggerService>();
+        services.AddSingleton<ArchiveWindowsToastService>();
         services.AddSingleton<ArchivePluginLifecycle>();
 
         services.AddNotificationProvider<ArchiveNotificationProvider>();
@@ -50,15 +53,21 @@ public class Plugin : PluginBase
             }
         };
 
-        AppBase.Current.AppStopping += (_, _) =>
+        AppBase.Current.AppStopping += async (_, _) =>
         {
             try
             {
-                IAppHost.GetService<ArchivePluginLifecycle>().StopAsync().GetAwaiter().GetResult();
+                await IAppHost.GetService<ArchivePluginLifecycle>().StopAsync();
             }
             catch
             {
                 ArchivePythonProcessTracker.CleanupTrackedProcesses();
+            }
+            finally
+            {
+                IAppHost.GetService<ArchiveFileWatchService>().Dispose();
+                IAppHost.GetService<ArchiveScheduledTriggerService>().Dispose();
+                IAppHost.GetService<ArchiveWindowsToastService>().Dispose();
             }
         };
     }

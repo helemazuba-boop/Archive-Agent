@@ -12,9 +12,16 @@ public sealed class ArchivePluginPaths
 
     public string LogsDirectory => Path.Combine(PluginConfigFolder, "logs");
 
-    public string ConfigPath => Path.Combine(DataDirectory, "config.json");
-
+    /// <summary>
+    /// 主机端配置文件路径（实际使用）。
+    /// </summary>
     public string HostConfigPath => Path.Combine(DataDirectory, "host-config.json");
+
+    /// <summary>
+    /// 归档配置路径（预留，供未来与 Python 后端配置合并使用）。
+    /// </summary>
+    [Obsolete("Use HostConfigPath instead. This path is reserved for future merged config support.")]
+    public string ConfigPath => Path.Combine(DataDirectory, "config.json");
 
     public string StatePath => Path.Combine(DataDirectory, "state.json");
 

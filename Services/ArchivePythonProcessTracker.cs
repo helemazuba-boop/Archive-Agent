@@ -76,17 +76,32 @@ internal static class ArchivePythonProcessTracker
 
     public static void CleanupTrackedProcesses()
     {
-        foreach (var processId in RunningProcessIds.Keys)
+        var ids = RunningProcessIds.Keys.ToList();
+        foreach (var processId in ids)
         {
             try
             {
+                if (!RunningProcessIds.TryRemove(processId, out _))
+                {
+                    continue;
+                }
+
                 using var process = Process.GetProcessById(processId);
                 if (!process.HasExited)
                 {
                     process.Kill(entireProcessTree: true);
                 }
             }
-            catch
+            catch (ArgumentException)
+            {
+            }
+            catch (InvalidOperationException)
+            {
+            }
+            catch (System.ComponentModel.Win32Exception)
+            {
+            }
+            catch (NotSupportedException)
             {
             }
         }

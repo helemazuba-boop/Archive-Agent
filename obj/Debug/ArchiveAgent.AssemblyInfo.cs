@@ -13,12 +13,12 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ArchiveAgent")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("0.50.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("0.50.0+df75e95d0c9481dca79e9484453186816af0605b")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("0.50.0+f89eabe8da9588096a894e8a006961589fa5bd9a")]
 [assembly: System.Reflection.AssemblyProductAttribute("Archive-Agent")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ArchiveAgent")]
 [assembly: System.Reflection.AssemblyVersionAttribute("0.50.0.0")]
-[assembly: System.Runtime.Versioning.TargetPlatformAttribute("Windows7.0")]
-[assembly: System.Runtime.Versioning.SupportedOSPlatformAttribute("Windows7.0")]
+[assembly: System.Runtime.Versioning.TargetPlatformAttribute("Windows10.0.17763.0")]
+[assembly: System.Runtime.Versioning.SupportedOSPlatformAttribute("Windows10.0.17763.0")]
 
 // 由 MSBuild WriteCodeFragment 类生成。
 

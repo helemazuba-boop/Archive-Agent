@@ -1051,3 +1051,14 @@ D:\projects\Archive-Agent\obj\Debug\ArchiveAgent.pdb
 D:\projects\Archive-Agent\obj\Debug\ArchiveAgent.genruntimeconfig.cache
 D:\projects\Archive-Agent\obj\Debug\ref\ArchiveAgent.dll
 D:\projects\Archive-Agent\bin\Debug\icon.png
+D:\projects\Archive-Agent\bin\Debug\Assets_Archive\llm_client.py
+D:\projects\Archive-Agent\bin\Debug\Assets_Archive\content_extractor.py
+D:\projects\Archive-Agent\bin\Debug\Microsoft.Toolkit.Uwp.Notifications.dll
+D:\projects\Archive-Agent\bin\Debug\Microsoft.Win32.SystemEvents.dll
+D:\projects\Archive-Agent\bin\Debug\System.Drawing.Common.dll
+D:\projects\Archive-Agent\bin\Debug\runtimes\win\lib\netcoreapp3.0\Microsoft.Win32.SystemEvents.dll
+D:\projects\Archive-Agent\bin\Debug\runtimes\unix\lib\netcoreapp3.0\System.Drawing.Common.dll
+D:\projects\Archive-Agent\bin\Debug\runtimes\win\lib\netcoreapp3.0\System.Drawing.Common.dll
+D:\projects\Archive-Agent\bin\Debug\Microsoft.Windows.SDK.NET.dll
+D:\projects\Archive-Agent\bin\Debug\WinRT.Runtime.dll
+D:\projects\Archive-Agent\obj\Debug\ArchiveA.0950B3C7.Up2Date

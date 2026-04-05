@@ -40,3 +40,14 @@ async def run_archive(run_request: ArchiveRunRequest, request: Request):
         trace_id=trace_id,
         request_source=request_source,
     )
+
+
+@router.post("/undo")
+async def undo_archive(request: Request):
+    runtime = getattr(request.app.state, "runtime", None)
+    if runtime is None:
+        raise HTTPException(status_code=503, detail="Runtime is not initialized.")
+    body = await request.json()
+    target_path = body.get("target_path", "")
+    operation = body.get("operation", "organize")
+    return runtime.command_service.undo_operation(target_path, operation)

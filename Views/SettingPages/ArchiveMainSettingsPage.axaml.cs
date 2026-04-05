@@ -20,6 +20,8 @@ public partial class ArchiveMainSettingsPage : SettingsPageBase
 {
     private ArchiveFileWatchService WatchService { get; } = IAppHost.GetService<ArchiveFileWatchService>();
     private IArchiveStateManager StateManager { get; } = IAppHost.GetService<IArchiveStateManager>();
+    private ArchiveScheduledTriggerService ScheduledTrigger { get; } = IAppHost.GetService<ArchiveScheduledTriggerService>();
+    private ArchiveOrchestrator Orchestrator { get; } = IAppHost.GetService<ArchiveOrchestrator>();
 
     public ObservableCollection<KeywordRule> Rules { get; } = [];
 
@@ -35,8 +37,10 @@ public partial class ArchiveMainSettingsPage : SettingsPageBase
 
         WatchService.StatusChanged += OnStatusChanged;
         StateManager.StateChanged += OnStateChanged;
+        ScheduledTrigger.StatusChanged += OnScheduledStatusChanged;
 
         Resources.Add("BoolToTextConverter", new BoolToTextConverter());
+        Resources.Add("MatchModeConverter", new MatchModeConverter());
     }
 
     private void OnPageLoaded(object? sender, RoutedEventArgs e)
@@ -45,6 +49,13 @@ public partial class ArchiveMainSettingsPage : SettingsPageBase
         LoadConfig();
         ReloadHistory();
         UpdateWatchStatus();
+    }
+
+    private void OnUnloaded(object? sender, RoutedEventArgs e)
+    {
+        WatchService.StatusChanged -= OnStatusChanged;
+        StateManager.StateChanged -= OnStateChanged;
+        ScheduledTrigger.StatusChanged -= OnScheduledStatusChanged;
     }
 
     private void LoadConfig()
@@ -57,19 +68,18 @@ public partial class ArchiveMainSettingsPage : SettingsPageBase
         OverwriteToggle.IsChecked = config.OverwriteExisting;
         OpenExplorerToggle.IsChecked = config.OpenExplorerAfterOperation;
 
-        SimilarityThresholdSlider.Value = config.EmbeddingSimilarityThreshold;
-        SimilarityThresholdText.Text = config.EmbeddingSimilarityThreshold.ToString("F1");
-        EmbeddingApiEndpointBox.Text = config.EmbeddingApiEndpoint ?? string.Empty;
-        EmbeddingApiKeyBox.Text = config.EmbeddingApiKey ?? string.Empty;
-        EmbeddingModelNameBox.Text = config.EmbeddingModelName ?? string.Empty;
-
-        EmbeddingProviderComboBox.SelectedIndex = config.EmbeddingProvider switch
-        {
-            "local" => 1,
-            "remote" => 2,
-            "hybrid" => 3,
-            _ => 0
-        };
+        SimilarityThresholdSlider.Value = config.LlmFallbackThreshold;
+        SimilarityThresholdText.Text = config.LlmFallbackThreshold.ToString("F1");
+        EmbeddingApiEndpointBox.Text = config.LlmApiEndpoint ?? string.Empty;
+        EmbeddingApiKeyBox.Text = config.LlmApiKey ?? string.Empty;
+        EmbeddingModelNameBox.Text = config.LlmModelName ?? string.Empty;
+        LlmEnabledToggle.IsChecked = config.LlmEnabled;
+        LlmIncludeContentToggle.IsChecked = config.LlmIncludeContent;
+        LlmContentMaxCharsBox.Value = config.LlmContentMaxChars;
+        ScheduledEnabledToggle.IsChecked = config.ScheduledEnabled;
+        ScheduledIntervalBox.Value = config.ScheduledIntervalMinutes;
+        ScheduledIntervalBox.IsEnabled = config.ScheduledEnabled;
+        SetLlmFieldsEnabled(config.LlmEnabled);
 
         Rules.Clear();
         foreach (var rule in config.KeywordRules)
@@ -90,11 +100,20 @@ public partial class ArchiveMainSettingsPage : SettingsPageBase
         config.OverwriteExisting = OverwriteToggle.IsChecked ?? false;
         config.OpenExplorerAfterOperation = OpenExplorerToggle.IsChecked ?? true;
         config.KeywordRules = Rules.Select(CloneRule).ToList();
-        config.EmbeddingSimilarityThreshold = SimilarityThresholdSlider.Value;
-        config.EmbeddingApiEndpoint = NormalizeOptionalText(EmbeddingApiEndpointBox.Text);
-        config.EmbeddingApiKey = NormalizeOptionalText(EmbeddingApiKeyBox.Text);
-        config.EmbeddingModelName = NormalizeOptionalText(EmbeddingModelNameBox.Text);
-        config.EmbeddingProvider = (EmbeddingProviderComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "keyword";
+        config.EmbeddingSimilarityThreshold = 0.7;
+        config.EmbeddingApiEndpoint = null;
+        config.EmbeddingApiKey = null;
+        config.EmbeddingModelName = null;
+        config.EmbeddingProvider = "keyword";
+        config.LlmEnabled = LlmEnabledToggle.IsChecked ?? false;
+        config.LlmApiEndpoint = NormalizeOptionalText(EmbeddingApiEndpointBox.Text);
+        config.LlmApiKey = NormalizeOptionalText(EmbeddingApiKeyBox.Text);
+        config.LlmModelName = NormalizeOptionalText(EmbeddingModelNameBox.Text);
+        config.LlmFallbackThreshold = SimilarityThresholdSlider.Value;
+        config.LlmIncludeContent = LlmIncludeContentToggle.IsChecked ?? false;
+        config.LlmContentMaxChars = (int)(LlmContentMaxCharsBox.Value ?? 2048);
+        config.ScheduledEnabled = ScheduledEnabledToggle.IsChecked ?? false;
+        config.ScheduledIntervalMinutes = (int)(ScheduledIntervalBox.Value ?? 60);
 
         WatchService.SaveConfig();
     }
@@ -108,6 +127,62 @@ public partial class ArchiveMainSettingsPage : SettingsPageBase
     {
         var normalized = (value ?? string.Empty).Trim();
         return normalized.Length == 0 ? null : normalized;
+    }
+
+    private void OnLlmEnabledToggled(object? sender, RoutedEventArgs e)
+    {
+        var isEnabled = LlmEnabledToggle.IsChecked ?? false;
+        SetLlmFieldsEnabled(isEnabled);
+        SaveConfig();
+    }
+
+    private void OnLlmIncludeContentToggled(object? sender, RoutedEventArgs e)
+    {
+        SaveConfig();
+    }
+
+    private void OnScheduledEnabledToggled(object? sender, RoutedEventArgs e)
+    {
+        var isEnabled = ScheduledEnabledToggle.IsChecked ?? false;
+        ScheduledIntervalBox.IsEnabled = isEnabled;
+        SaveConfig();
+        if (isEnabled)
+        {
+            ScheduledTrigger.Restart();
+        }
+        else
+        {
+            ScheduledTrigger.Stop();
+        }
+    }
+
+    private void OnScheduledIntervalChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    {
+        SaveConfig();
+        if (ScheduledEnabledToggle.IsChecked == true)
+        {
+            ScheduledTrigger.Restart();
+        }
+    }
+
+    private void OnScheduledStatusChanged(object? sender, string status)
+    {
+        Dispatcher.UIThread.Post(() => SetStatus($"[Schedule] {status}", Brushes.Gray));
+    }
+
+    private void OnLlmContentMaxCharsChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    {
+        SaveConfig();
+    }
+
+    private void SetLlmFieldsEnabled(bool isEnabled)
+    {
+        EmbeddingApiEndpointBox.IsEnabled = isEnabled;
+        EmbeddingApiKeyBox.IsEnabled = isEnabled;
+        EmbeddingModelNameBox.IsEnabled = isEnabled;
+        SimilarityThresholdSlider.IsEnabled = isEnabled;
+        LlmIncludeContentToggle.IsEnabled = isEnabled;
+        LlmContentMaxCharsBox.IsEnabled = isEnabled;
     }
 
     private void OnToggleWatchClick(object? sender, RoutedEventArgs e)
@@ -158,11 +233,13 @@ public partial class ArchiveMainSettingsPage : SettingsPageBase
             IsEnabled = true,
             MatchFileName = MatchFileNameCheckBox.IsChecked ?? true,
             MatchExtension = MatchExtensionCheckBox.IsChecked ?? false,
-            Priority = (int)NewRulePriorityBox.Value
+            MatchMode = (NewRuleMatchModeComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "word",
+            Priority = (int)(NewRulePriorityBox.Value ?? 0)
         });
 
         NewKeywordBox.Text = string.Empty;
         NewTargetDirBox.Text = string.Empty;
+        NewRuleMatchModeComboBox.SelectedIndex = 0;
         NewRulePriorityBox.Value = 0;
 
         UpdateRulesEmptyState();
@@ -232,16 +309,56 @@ public partial class ArchiveMainSettingsPage : SettingsPageBase
                      .OrderByDescending(item => item.OccurredAt)
                      .Take(100))
         {
+            var sourcePath = record.SourcePath;
+            var targetPath = record.TargetPath ?? string.Empty;
+            var operation = record.Operation;
+            var canUndo = record.Success
+                && !string.IsNullOrEmpty(targetPath)
+                && File.Exists(targetPath)
+                && operation != "delete";
+
             HistoryItems.Add(new FileHistoryItem
             {
                 Time = record.OccurredAt.LocalDateTime.ToString("MM-dd HH:mm:ss"),
-                FileName = Path.GetFileName(record.SourcePath),
+                FileName = Path.GetFileName(sourcePath),
                 MatchedRule = record.MatchedKeyword ?? "-",
-                Status = record.Success ? "Success" : $"Failed: {record.Message}"
+                Status = record.Success ? "Success" : $"Failed: {record.Message}",
+                TargetPath = targetPath,
+                Operation = operation,
+                CanUndo = canUndo
             });
         }
 
         HistoryEmptyStatePanel.IsVisible = HistoryItems.Count == 0;
+    }
+
+    private async void OnUndoHistoryClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button || button.Tag is not string targetPath)
+            return;
+
+        var item = HistoryItems.FirstOrDefault(x => x.TargetPath == targetPath);
+        if (item == null)
+            return;
+
+        try
+        {
+            var result = await Orchestrator.UndoOperationAsync(targetPath, item.Operation);
+            if (result.Success)
+            {
+                SetStatus($"已撤销: {result.Message}", Brushes.Green);
+            }
+            else
+            {
+                SetStatus($"撤销失败: {result.Message}", Brushes.Orange);
+            }
+        }
+        catch (Exception ex)
+        {
+            SetStatus($"撤销异常: {ex.Message}", Brushes.OrangeRed);
+        }
+
+        ReloadHistory();
     }
 
     private void UpdateRulesEmptyState()
@@ -254,25 +371,39 @@ public partial class ArchiveMainSettingsPage : SettingsPageBase
         var isWatching = WatchService.IsWatching;
         var watchPath = WatchService.Config.WatchPath;
         var statusText = isWatching ? "Watching" : "Stopped";
-        var pathText = string.IsNullOrWhiteSpace(watchPath) ? "Desktop" : Path.GetFileName(watchPath);
+        var pathText = string.IsNullOrWhiteSpace(watchPath)
+            ? "Desktop"
+            : GetDirectoryNameOrPath(watchPath);
 
         StatusInfoBar.Message = $"Status: {statusText} | Path: {pathText}";
         StatusInfoBar.Severity = isWatching ? InfoBarSeverity.Success : InfoBarSeverity.Informational;
         ToggleWatchBtn.Content = CreateIconText(
             isWatching ? "\uE71B" : "\uE71A",
             isWatching ? "Stop watching" : "Start watching");
+
+        static string GetDirectoryNameOrPath(string path)
+        {
+            var name = Path.GetFileName(path);
+            return string.IsNullOrEmpty(name) ? path : name;
+        }
+    }
+
+    private static InfoBarSeverity ColorToSeverity(IBrush? color)
+    {
+        if (color is Avalonia.Media.SolidColorBrush scb)
+        {
+            var c = scb.Color;
+            if (c.R > 200 && c.G > 150 && c.B < 50) return InfoBarSeverity.Warning;
+            if (c.G > 150 && c.R < 50 && c.B < 50) return InfoBarSeverity.Success;
+            if (c.R > 200 && c.G < 50 && c.B < 50) return InfoBarSeverity.Error;
+        }
+        return InfoBarSeverity.Informational;
     }
 
     private void SetStatus(string message, IBrush? color)
     {
         StatusInfoBar.Message = message;
-        StatusInfoBar.Severity = color == Brushes.Green
-            ? InfoBarSeverity.Success
-            : color == Brushes.Orange
-                ? InfoBarSeverity.Warning
-                : color == Brushes.Red
-                    ? InfoBarSeverity.Error
-                    : InfoBarSeverity.Informational;
+        StatusInfoBar.Severity = ColorToSeverity(color);
     }
 
     private static KeywordRule CloneRule(KeywordRule rule)
@@ -322,14 +453,45 @@ public sealed class FileHistoryItem
     public string MatchedRule { get; set; } = string.Empty;
 
     public string Status { get; set; } = string.Empty;
+
+    public string TargetPath { get; set; } = string.Empty;
+
+    public string Operation { get; set; } = "organize";
+
+    public bool CanUndo { get; set; } = true;
 }
 
 public sealed class BoolToTextConverter : IValueConverter
 {
     public object? Convert(object? value, Type targetType, object? parameter, System.Globalization.CultureInfo culture)
     {
-        var text = parameter?.ToString() ?? string.Empty;
-        return value is true ? text : string.Empty;
+        return value is true ? parameter?.ToString() ?? string.Empty : "-";
+    }
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, System.Globalization.CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+public sealed class MatchModeConverter : IValueConverter
+{
+    private static readonly Dictionary<string, string> ModeLabels = new()
+    {
+        ["word"] = "词",
+        ["prefix"] = "前缀",
+        ["suffix"] = "后缀",
+        ["exact"] = "完整",
+        ["substring"] = "子串",
+    };
+
+    public object? Convert(object? value, Type targetType, object? parameter, System.Globalization.CultureInfo culture)
+    {
+        if (value is not string mode)
+        {
+            return "词";
+        }
+        return ModeLabels.TryGetValue(mode, out var label) ? label : mode;
     }
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, System.Globalization.CultureInfo culture)
